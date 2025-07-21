@@ -31,7 +31,6 @@ class SerialProtocol(asyncio.Protocol):
 
 
 
-
 class Tester:
     def __init__(self, proto):
         self.proto = proto
@@ -40,23 +39,15 @@ class Tester:
         self.proto.send("LED!")
     
     def test_sensors(self, params):
-        self.proto.send("sensors!")
+        self.proto.send(f"SENSORS,{params[0]},{params[1]},{params[2]},{params[3]}!")
 
     def test_boot(self):
-        self.proto.send("boot!")
+        self.proto.send("BOOT!")
 
     def test_ping(self):
-        self.proto.send("ping!")
+        self.proto.send("PING!")
 
 
-# async def send_loop(proto):
-#     loop = asyncio.get_running_loop()
-#     while 1:
-#         user_input = await loop.run_in_executor(None, input, "+++ Enter command:  ")
-#         try:
-#             proto.send(user_input.encode("utf-8"))
-#         except:
-#             print("Could not send data :( ")
 
 async def test_commands(tester):
     loop = asyncio.get_running_loop()
@@ -69,28 +60,20 @@ async def test_commands(tester):
         elif user_input == 'ping':
             tester.test_ping()
         elif user_input == 'sensors':
-            tester.test_sensors()
+            tester.test_sensors([1, 2, 3, 4])
         else:
             print("Test command not found! ")
 
 
 async def main():
-    # adjust port and baudrate as needed
-    _, proto = await serial_asyncio.create_serial_connection(
-        asyncio.get_running_loop(),
-        SerialProtocol,
-        'COM9',
-        baudrate=9600
-    )
-
+    # adjust port and baudrate
+    _, proto = await serial_asyncio.create_serial_connection(asyncio.get_running_loop(), SerialProtocol, 'COM9', baudrate=9600)
 
     tester = Tester(proto) 
     asyncio.create_task(test_commands(tester))
     
-
     await asyncio.Event().wait()  # This never finishes
-    # the loop will now call data_received asynchronously
-
+    # the loop will call data_received asynchronously
 
 
 if __name__ == "__main__":

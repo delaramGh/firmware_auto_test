@@ -32,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define TEST_MSGS 1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -62,6 +62,8 @@ uint8_t rxByte[1];
 uint8_t rxBuffer[64];
 uint8_t rxData[64];
 uint8_t flag_data_ready = 0;
+uint8_t parameters[4], results[4];
+uint8_t txData[64];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,6 +74,8 @@ void StartDefaultTask(void *argument);
 void StartTask02(void *argument);
 
 /* USER CODE BEGIN PFP */
+void get_data();
+void f();
 
 /* USER CODE END PFP */
 
@@ -285,6 +289,24 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void get_data()
+{
+	int cnt = sscanf((char*)rxData,"SENSORS,%d,%d,%d,%d!", &parameters[0], &parameters[1], &parameters[2], &parameters[3]);
+	//if (cnt != 4) 
+		//error msg
+}
+	
+
+void f()
+{
+	results[0] = parameters[3];
+	results[1] = parameters[2];
+	results[2] = parameters[1];
+	results[3] = parameters[0];
+	sprintf((char*)txData, "Results: %d, %d, %d, %d!", results[0], results[1], results[2], results[3]);
+}
+	
+	
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	strcat((char*)rxBuffer, (char*)rxByte);
@@ -323,11 +345,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+	//BUZZER
+	HAL_UART_Transmit(&huart2, (uint8_t*)"System booting...!", strlen((char*)"System booting...!"), 100);
+	osDelay(100);
+	HAL_UART_Transmit(&huart2, (uint8_t*)"Hello world :) !", strlen((char*)"Hello world :) !"), 100);
+	osDelay(100);
   /* Infinite loop */
   for(;;)
   {
-		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-		HAL_UART_Transmit(&huart2, (uint8_t*)"Default!", strlen("Default!"), 100);
+//		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		#if TEST_MSGS
+			HAL_UART_Transmit(&huart2, (uint8_t*)"Default!", strlen("Default!"), 100);
+		#endif
     osDelay(5000);
   }
   /* USER CODE END 5 */
@@ -347,9 +376,51 @@ void StartTask02(void *argument)
   for(;;)
   {
 		if(flag_data_ready)
-			HAL_UART_Transmit(&huart2, rxData, strlen((char*)rxData), 100);
+		{
+			if(strstr((char*)rxData, "LED"))
+			{
+				#if TEST_MSGS
+					HAL_UART_Transmit(&huart2, (uint8_t*)"LED test running!", strlen((char*)"LED test running!"), 100);
+				#endif
+				for(int i=0; i<16; i++)
+				{
+					HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+					HAL_Delay(100);
+				}
+			}
+			else if(strstr((char*)rxData, "BOOT"))
+			{
+				#if TEST_MSGS
+					HAL_UART_Transmit(&huart2, (uint8_t*)"BOOT test running!", strlen((char*)"BOOT test running!"), 100);
+				#endif
+				osDelay(100);
+				NVIC_SystemReset();
+			}
+			else if(strstr((char*)rxData, "PING"))
+			{
+				#if TEST_MSGS
+					HAL_UART_Transmit(&huart2, (uint8_t*)"PING test running!", strlen((char*)"PING test running!"), 100);
+				#endif
+				osDelay(15);
+				uint8_t txBuffer[20];
+				sprintf((char*)txBuffer, "Ping: %d!", rand()%200+50);
+				HAL_UART_Transmit(&huart2, txBuffer, strlen((char*)txBuffer), 100);
+			}
+			else if(strstr((char*)rxData, "SENSORS"))
+			{
+				#if TEST_MSGS
+					HAL_UART_Transmit(&huart2, (uint8_t*)"SENSORS test running!", strlen((char*)"SENSORS test running!"), 100);
+				#endif
+				get_data(); //sets parameters[]
+				f(); //sets results[]
+				osDelay(15);
+				HAL_UART_Transmit(&huart2, txData, 64, 100);
+			}
+			else
+				HAL_UART_Transmit(&huart2, (uint8_t*)"Invalid command!", strlen((char*)"Invalid command!"), 100);
+		}
 		flag_data_ready = 0;
-    osDelay(100);
+    osDelay(10);
   }
   /* USER CODE END StartTask02 */
 }
