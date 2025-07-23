@@ -1,4 +1,4 @@
-import asyncio, serial_asyncio
+import asyncio, serial_asyncio, threading
 
 
 
@@ -75,10 +75,29 @@ async def main():
     await asyncio.Event().wait()  # This never finishes
     # the loop will call data_received asynchronously
 
+async def mh_main():
+    # adjust port and baudrate
+    _, proto = await serial_asyncio.create_serial_connection(asyncio.get_running_loop(), SerialProtocol, 'COM9', baudrate=9600)
+
+    tester = Tester(proto) 
+    asyncio.create_task(test_commands(tester))
+    tester.test_LED()
+    await asyncio.Event().wait()  # This never finishes
+    # the loop will call data_received asynchronously
+
+# class MHTester
+
+
 
 if __name__ == "__main__":
+    from time import sleep
+    # tester = MHTester()
     print("Begin! :)")
+    sleep(5)
     asyncio.run(main())
+    # tester.test_LED()
+    # print('Done!')
+
 
 
 

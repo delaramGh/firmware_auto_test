@@ -23,6 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include <time.h>
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,7 +64,7 @@ uint8_t rxByte[1];
 uint8_t rxBuffer[64];
 uint8_t rxData[64];
 uint8_t flag_data_ready = 0;
-uint8_t parameters[4], results[4];
+int parameters[4];
 uint8_t txData[64];
 /* USER CODE END PV */
 
@@ -116,6 +118,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 	HAL_UART_Receive_IT(&huart2, rxByte, 1);
+//	srand((unsigned)time(NULL));
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -299,11 +302,35 @@ void get_data()
 
 void f()
 {
-	results[0] = parameters[3];
-	results[1] = parameters[2];
-	results[2] = parameters[1];
-	results[3] = parameters[0];
-	sprintf((char*)txData, "Results: %d, %d, %d, %d!", results[0], results[1], results[2], results[3]);
+	//parameters order: rx, tx, freq, bw
+	//results order: boot_time, temperature, data_throughput, error_rate
+	int rx = parameters[0];
+	int tx = parameters[1];
+	int freq = parameters[2];
+	int bw = parameters[3];
+	int boot_time, temperature, error_rate;
+	float data_throughput;
+	
+	double x = (double)rand() / RAND_MAX;
+	
+	if(freq > 300000)
+		boot_time = 9 + x * 5;
+	else
+		boot_time = x * 5;
+
+	if(rx > -3 || tx > -3)
+			temperature = 45 + x * 10;
+	else
+			temperature = 25 + x * 5;
+
+	if(bw < 500)
+			error_rate = x * 15;
+	else
+			error_rate = x * 5;
+
+	data_throughput = x;
+
+	sprintf((char*)txData, "Sensors results: %d, %d, %.3f, %d!", boot_time, temperature, data_throughput, error_rate);
 }
 	
 	
@@ -409,10 +436,10 @@ void StartTask02(void *argument)
 			else if(strstr((char*)rxData, "SENSORS"))
 			{
 				#if TEST_MSGS
-					HAL_UART_Transmit(&huart2, (uint8_t*)"SENSORS test running!", strlen((char*)"SENSORS test running!"), 100);
+//					HAL_UART_Transmit(&huart2, (uint8_t*)"SENSORS test running!", strlen((char*)"SENSORS test running!"), 100);
 				#endif
 				get_data(); //sets parameters[]
-				f(); //sets results[]
+				f(); //sets txData
 				osDelay(15);
 				HAL_UART_Transmit(&huart2, txData, 64, 100);
 			}

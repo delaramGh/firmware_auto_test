@@ -41,3 +41,5 @@ infinerademo\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 infinerademo\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 infinerademo\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
 infinerademo\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+infinerademo\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\time.h
+infinerademo\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
